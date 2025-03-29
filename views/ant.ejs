@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Langton's Ant Simulation</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .simulation-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px auto;
+        }
+
+        .controls {
+            gap: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .rules-panel {
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .rule-item {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .steps-input {
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            canvas {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-4">
+        <div class="simulation-container">
+            <div class="row mb-4">
+                <div class="col">
+                    <a href="/" class="btn btn-secondary" style="width: auto;">
+                        <i class="bi bi-arrow-left"></i> Go Back
+                    </a>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="d-flex justify-content-center">
+                        <canvas id="gameCanvas"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="controls">
+                        <div class="steps-input form-group">
+                            <label for="gameSteps" class="form-label">Steps per frame:</label>
+                            <input type="number" class="form-control" id="gameSteps" value="100" min="1" max="1000">
+                        </div>
+
+                        <button id="addRuleLeft" class="btn btn-primary">Add Rule Left</button>
+                        <button id="addRuleRight" class="btn btn-primary">Add Rule Right</button>
+                        <button id="removeRule" class="btn btn-danger">Remove Rule</button>
+                        <button id="startButton" class="btn btn-success">Start</button>
+                        <button id="pauseButton" class="btn btn-warning" style="display: none;">Pause</button>
+                        <button id="resetButton" class="btn btn-primary">Reset</button>
+
+                        <div class="rules-panel mt-3">
+                            <h3>Rules</h3>
+                            <div id="rulesList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>"use strict";
+        // Constants
+        const GRID_SIZE = 160;
+        const CELL_SIZE = 5;
+        const CANVAS_SIZE = GRID_SIZE * CELL_SIZE;
+        // Colors
+        const COLORS = [
+            [255, 255, 255], // White
+            [0, 0, 0], // Black
+            [255, 0, 0], // Red
+            [0, 255, 0], // Green
+            [0, 0, 255] // Blue
+        ];
+        // Directions (up, right, down, left)
+        const DIRECTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+        // Get DOM elements
+        const gameStepsInput = document.getElementById('gameSteps');
+        const addRuleLeftBtn = document.getElementById('addRuleLeft');
+        const addRuleRightBtn = document.getElementById('addRuleRight');
+        const removeRuleBtn = document.getElementById('removeRule');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const resetButton = document.getElementById('resetButton');
+        // Function to enable/disable controls
+        function setControlsEnabled(enabled) {
+            addRuleLeftBtn.disabled = !enabled;
+            addRuleRightBtn.disabled = !enabled;
+            removeRuleBtn.disabled = !enabled;
+            gameStepsInput.disabled = !enabled;
+        }
+        class LangtonsAnt {
+            grid;
+            x;
+            y;
+            dir;
+            rules;
+            turns;
+            isRunning;
+            animationFrame;
+            constructor() {
+                this.grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+                this.x = Math.floor(GRID_SIZE / 2);
+                this.y = Math.floor(GRID_SIZE / 2);
+                this.dir = 0;
+                this.rules = { 0: 1, 1: 2, 2: 0 };
+                this.turns = { 0: 1, 1: -1, 2: 1 };
+                this.isRunning = false;
+                this.animationFrame = null;
+            }
+            step() {
+                const currentColor = this.grid[this.y][this.x];
+                this.grid[this.y][this.x] = this.rules[currentColor];
+                this.dir = (this.dir + this.turns[currentColor] + 4) % 4;
+                const [dx, dy] = DIRECTIONS[this.dir];
+                this.x = (this.x + dx + GRID_SIZE) % GRID_SIZE;
+                this.y = (this.y + dy + GRID_SIZE) % GRID_SIZE;
+            }
+            addRuleLeft() {
+                const newColor = Object.keys(this.rules).length;
+                COLORS.push([
+                    Math.floor(Math.random() * 256),
+                    Math.floor(Math.random() * 256),
+                    Math.floor(Math.random() * 256)
+                ]);
+                this.rules[newColor] = 0;
+                if (newColor > 0) {
+                    this.rules[newColor - 1] = newColor;
+                }
+                this.turns[newColor] = -1;
+                this.updateRulesDisplay();
+            }
+            addRuleRight() {
+                const newColor = Object.keys(this.rules).length;
+                COLORS.push([
+                    Math.floor(Math.random() * 256),
+                    Math.floor(Math.random() * 256),
+                    Math.floor(Math.random() * 256)
+                ]);
+                this.rules[newColor] = 0;
+                if (newColor > 0) {
+                    this.rules[newColor - 1] = newColor;
+                }
+                this.turns[newColor] = 1;
+                this.updateRulesDisplay();
+            }
+            removeRule() {
+                if (Object.keys(this.rules).length > 0) {
+                    const lastColor = Object.keys(this.rules).length - 1;
+                    delete this.rules[lastColor];
+                    delete this.turns[lastColor];
+                    if (Object.keys(this.rules).length > 0) {
+                        this.rules[Object.keys(this.rules).length - 1] = 0;
+                    }
+                    COLORS.pop();
+                    this.updateRulesDisplay();
+                }
+            }
+            reset() {
+                this.grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+                this.x = Math.floor(GRID_SIZE / 2);
+                this.y = Math.floor(GRID_SIZE / 2);
+                this.dir = 0;
+                this.rules = { 0: 1, 1: 2, 2: 0 };
+                this.turns = { 0: 1, 1: -1, 2: 1 };
+                COLORS.length = 5; // Reset to initial colors
+                this.updateRulesDisplay();
+                setControlsEnabled(true);
+            }
+            updateRulesDisplay() {
+                const rulesList = document.getElementById('rulesList');
+                if (!rulesList)
+                    return;
+                rulesList.innerHTML = '';
+                Object.keys(this.rules).forEach(key => {
+                    const numKey = parseInt(key);
+                    const ruleItem = document.createElement('div');
+                    ruleItem.className = 'rule-item';
+                    ruleItem.textContent = `Rule ${numKey} → ${this.rules[numKey]} (Turn: ${this.turns[numKey] === 1 ? 'Right' : 'Left'})`;
+                    rulesList.appendChild(ruleItem);
+                });
+            }
+            draw(ctx) {
+                ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const color = COLORS[this.grid[y][x]];
+                        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+        }
+        // Initialize canvas and game
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = CANVAS_SIZE;
+        canvas.height = CANVAS_SIZE;
+        const game = new LangtonsAnt();
+        // Animation loop
+        function animate() {
+            if (game.isRunning) {
+                const steps = parseInt(gameStepsInput.value) || 100;
+                for (let i = 0; i < steps; i++) {
+                    game.step();
+                }
+                game.draw(ctx);
+                game.animationFrame = requestAnimationFrame(animate);
+            }
+        }
+        // Event listeners
+        addRuleLeftBtn.addEventListener('click', () => {
+            if (!game.isRunning) {
+                game.addRuleLeft();
+            }
+        });
+        addRuleRightBtn.addEventListener('click', () => {
+            if (!game.isRunning) {
+                game.addRuleRight();
+            }
+        });
+        removeRuleBtn.addEventListener('click', () => {
+            if (!game.isRunning) {
+                game.removeRule();
+            }
+        });
+        startButton.addEventListener('click', () => {
+            game.isRunning = true;
+            startButton.style.display = 'none';
+            pauseButton.style.display = 'block';
+            setControlsEnabled(false);
+            animate();
+        });
+        pauseButton.addEventListener('click', () => {
+            game.isRunning = false;
+            if (game.animationFrame !== null) {
+                cancelAnimationFrame(game.animationFrame);
+            }
+            startButton.style.display = 'block';
+            pauseButton.style.display = 'none';
+            setControlsEnabled(true);
+        });
+        resetButton.addEventListener('click', () => {
+            game.isRunning = false;
+            if (game.animationFrame !== null) {
+                cancelAnimationFrame(game.animationFrame);
+            }
+            game.reset();
+            startButton.style.display = 'block';
+            pauseButton.style.display = 'none';
+            game.draw(ctx);
+        });
+        // Initial draw
+        game.draw(ctx);
+        game.updateRulesDisplay();
+    </script>
+</body>
+
+</html>
