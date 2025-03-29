@@ -44,3 +44,14 @@ body {
     background-color: #ccc;
    
 }
+.card {
+    max-width: 300px; 
+    margin: 0 auto; 
+}
+.card-img-top {
+    max-height: 300px; 
+    object-fit: cover; 
+}
+.card-body {
+    padding: 20px; 
+}
