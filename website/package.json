@@ -1,0 +1,33 @@
+{
+    "name": "neuroant",
+    "version": "1.0.0",
+    "description": "",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/GeorgiMY/NeuroAnt.git"
+    },
+    "author": "",
+    "type": "commonjs",
+    "main": "./dist/main.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "nodemon src/main.ts",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.7",
+        "ejs": "^3.1.10",
+        "express": "^4.21.2",
+        "typescript": "^5.8.2"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.0",
+        "nodemon": "^3.1.9",
+        "ts-node": "^10.9.2"
+    },
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/GeorgiMY/NeuroAnt/issues"
+    },
+    "homepage": "https://github.com/GeorgiMY/NeuroAnt#readme"
+}

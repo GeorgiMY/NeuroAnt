@@ -1,31 +1,37 @@
+// Types
+type Color = [number, number, number];
+type Direction = [number, number];
+type Rules = { [key: number]: number };
+type Turns = { [key: number]: number };
+
 // Constants
-const GRID_SIZE = 160;
-const CELL_SIZE = 5;
-const CANVAS_SIZE = GRID_SIZE * CELL_SIZE;
+const GRID_SIZE: number = 160;
+const CELL_SIZE: number = 5;
+const CANVAS_SIZE: number = GRID_SIZE * CELL_SIZE;
 
 // Colors
-const COLORS = [
+const COLORS: Color[] = [
     [255, 255, 255], // White
-    [0, 0, 0],       // Black
-    [255, 0, 0],     // Red
-    [0, 255, 0],     // Green
-    [0, 0, 255]      // Blue
+    [0, 0, 0], // Black
+    [255, 0, 0], // Red
+    [0, 255, 0], // Green
+    [0, 0, 255] // Blue
 ];
 
 // Directions (up, right, down, left)
-const DIRECTIONS = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+const DIRECTIONS: Direction[] = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 
 // Get DOM elements
-const gameStepsInput = document.getElementById('gameSteps');
-const addRuleLeftBtn = document.getElementById('addRuleLeft');
-const addRuleRightBtn = document.getElementById('addRuleRight');
-const removeRuleBtn = document.getElementById('removeRule');
-const startButton = document.getElementById('startButton');
-const pauseButton = document.getElementById('pauseButton');
-const resetButton = document.getElementById('resetButton');
+const gameStepsInput = document.getElementById('gameSteps') as HTMLInputElement;
+const addRuleLeftBtn = document.getElementById('addRuleLeft') as HTMLButtonElement;
+const addRuleRightBtn = document.getElementById('addRuleRight') as HTMLButtonElement;
+const removeRuleBtn = document.getElementById('removeRule') as HTMLButtonElement;
+const startButton = document.getElementById('startButton') as HTMLButtonElement;
+const pauseButton = document.getElementById('pauseButton') as HTMLButtonElement;
+const resetButton = document.getElementById('resetButton') as HTMLButtonElement;
 
 // Function to enable/disable controls
-function setControlsEnabled(enabled) {
+function setControlsEnabled(enabled: boolean): void {
     addRuleLeftBtn.disabled = !enabled;
     addRuleRightBtn.disabled = !enabled;
     removeRuleBtn.disabled = !enabled;
@@ -33,8 +39,17 @@ function setControlsEnabled(enabled) {
 }
 
 class LangtonsAnt {
+    private grid: number[][];
+    private x: number;
+    private y: number;
+    private dir: number;
+    private rules: Rules;
+    private turns: Turns;
+    public isRunning: boolean;
+    public animationFrame: number | null;
+
     constructor() {
-        this.grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+        this.grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
         this.x = Math.floor(GRID_SIZE / 2);
         this.y = Math.floor(GRID_SIZE / 2);
         this.dir = 0;
@@ -44,7 +59,7 @@ class LangtonsAnt {
         this.animationFrame = null;
     }
 
-    step() {
+    step(): void {
         const currentColor = this.grid[this.y][this.x];
         this.grid[this.y][this.x] = this.rules[currentColor];
         this.dir = (this.dir + this.turns[currentColor] + 4) % 4;
@@ -53,7 +68,7 @@ class LangtonsAnt {
         this.y = (this.y + dy + GRID_SIZE) % GRID_SIZE;
     }
 
-    addRuleLeft() {
+    addRuleLeft(): void {
         const newColor = Object.keys(this.rules).length;
         COLORS.push([
             Math.floor(Math.random() * 256),
@@ -69,7 +84,7 @@ class LangtonsAnt {
         this.updateRulesDisplay();
     }
 
-    addRuleRight() {
+    addRuleRight(): void {
         const newColor = Object.keys(this.rules).length;
         COLORS.push([
             Math.floor(Math.random() * 256),
@@ -85,7 +100,7 @@ class LangtonsAnt {
         this.updateRulesDisplay();
     }
 
-    removeRule() {
+    removeRule(): void {
         if (Object.keys(this.rules).length > 0) {
             const lastColor = Object.keys(this.rules).length - 1;
             delete this.rules[lastColor];
@@ -100,8 +115,8 @@ class LangtonsAnt {
         }
     }
 
-    reset() {
-        this.grid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(0));
+    reset(): void {
+        this.grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
         this.x = Math.floor(GRID_SIZE / 2);
         this.y = Math.floor(GRID_SIZE / 2);
         this.dir = 0;
@@ -112,19 +127,22 @@ class LangtonsAnt {
         setControlsEnabled(true);
     }
 
-    updateRulesDisplay() {
+    updateRulesDisplay(): void {
         const rulesList = document.getElementById('rulesList');
+        if (!rulesList) return;
+
         rulesList.innerHTML = '';
         Object.keys(this.rules).forEach(key => {
+            const numKey = parseInt(key);
             const ruleItem = document.createElement('div');
             ruleItem.className = 'rule-item';
-            ruleItem.textContent = `Rule ${key} → ${this.rules[key]} (Turn: ${this.turns[key] === 1 ? 'Right' : 'Left'})`;
+            ruleItem.textContent = `Rule ${numKey} → ${this.rules[numKey]} (Turn: ${this.turns[numKey] === 1 ? 'Right' : 'Left'})`;
             rulesList.appendChild(ruleItem);
         });
     }
 
-    draw(ctx) {
-        // Draw grid
+    draw(ctx: CanvasRenderingContext2D): void {
+        ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
         for (let y = 0; y < GRID_SIZE; y++) {
             for (let x = 0; x < GRID_SIZE; x++) {
                 const color = COLORS[this.grid[y][x]];
@@ -136,21 +154,20 @@ class LangtonsAnt {
 }
 
 // Initialize canvas and game
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 canvas.width = CANVAS_SIZE;
 canvas.height = CANVAS_SIZE;
 
 const game = new LangtonsAnt();
 
 // Animation loop
-function animate() {
+function animate(): void {
     if (game.isRunning) {
         const steps = parseInt(gameStepsInput.value) || 100;
         for (let i = 0; i < steps; i++) {
             game.step();
         }
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         game.draw(ctx);
         game.animationFrame = requestAnimationFrame(animate);
     }
@@ -185,7 +202,9 @@ startButton.addEventListener('click', () => {
 
 pauseButton.addEventListener('click', () => {
     game.isRunning = false;
-    cancelAnimationFrame(game.animationFrame);
+    if (game.animationFrame !== null) {
+        cancelAnimationFrame(game.animationFrame);
+    }
     startButton.style.display = 'block';
     pauseButton.style.display = 'none';
     setControlsEnabled(true);
@@ -193,11 +212,12 @@ pauseButton.addEventListener('click', () => {
 
 resetButton.addEventListener('click', () => {
     game.isRunning = false;
-    cancelAnimationFrame(game.animationFrame);
+    if (game.animationFrame !== null) {
+        cancelAnimationFrame(game.animationFrame);
+    }
     game.reset();
     startButton.style.display = 'block';
     pauseButton.style.display = 'none';
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
     game.draw(ctx);
 });
 
